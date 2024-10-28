@@ -1,0 +1,33 @@
+{
+    "id": "CF22EB38",
+    "path": "C:/DATA311/assignments/assignment1_40965642.qmd",
+    "project_path": "assignments/assignment1_40965642.qmd",
+    "type": "quarto_markdown",
+    "hash": "3680318680",
+    "contents": "",
+    "dirty": false,
+    "created": 1727383062927.0,
+    "source_on_save": true,
+    "relative_order": 1,
+    "properties": {
+        "rmdVisualMode": "false",
+        "rmdVisualWrapConfigured": "true",
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "70,0",
+        "scrollLine": "66",
+        "docOutlineVisible": "1",
+        "rmdVisualCollapsedChunks": "",
+        "rmdVisualModeLocation": "2:0",
+        "ignored_words": "Multicollinearity,multicollinearity,interpretability\n"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1727664814,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1727664814989,
+    "read_only": false,
+    "read_only_alternatives": []
+}

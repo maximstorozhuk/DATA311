@@ -1,0 +1,357 @@
+---
+title: "Assignment 1"
+subtitle: "DATA 311 - Machine Learning"
+author: "Maxim Storozhuk (40965642)"
+toc: true
+format: html
+df-print: paged
+embed-resources: true
+editor: visual
+---
+
+# Exercise 1
+This exercise is both a __regression__ and __supervised__ problem.
+
+So, the answers are __B__ and __C__.
+
+# Exercise 2
+
+```{r}
+data <- read.csv("assignmentData/A1/abalone.data") #all data will now be stored in the "data" variable
+str(data)
+```
+
+## Exercise 2b
+
+This part is not necessary, as str(data) has already verified that all datatypes are correct.
+
+However, I will rename every column to what data it actually represents, using information from the [official website](https://archive.ics.uci.edu/dataset/1/abalone).
+
+
+```{r}
+library(dplyr) #we will need this throughout the assignment
+library(knitr) #we will need this throughout the assignment
+names(data) #names of columns before renaming
+data <- data %>% rename(Sex = M)
+data <- data %>% rename(Length = X0.455)
+data <- data %>% rename(Diameter = X0.365)
+data <- data %>% rename(Height = X0.095)
+data <- data %>% rename(Whole_Weight = X0.514)
+data <- data %>% rename(Shucked_Weight = X0.2245)
+data <- data %>% rename(Viscera_Weight = X0.101)
+data <- data %>% rename(Shell_Weight = X0.15)
+data <- data %>% rename(Rings = X15)
+names(data) #names of columns after renaming
+```
+
+# Exercise 3
+
+```{r}
+hist(data$Rings,
+     main = "Rings Histogram",
+     xlab = "# of rings")
+boxplot(data$Rings,
+     main = "Rings Boxplot",
+     ylab = "# of rings")
+```
+
+The assumptions for the linear model come as follows:
+
+1. Linearity: The relationship between the independent and dependent variables should be (approximately) linear.
+2. Independence of Errors: The errors (residuals) in the model should be independent of each other.
+3. Homoscedasticity: The variance of the residuals is constant across all levels of the predictors.
+
+In the histogram and boxplot, we are only looking at the dependent variable. We are not yet looking at the relationship between the dependent and independent variables. Therefore, we can not say that we break any of the assumptions of the linear model.
+
+The distribution can be described as normal, as more than 95% of the values follow a normal distribution. There is a bit of a  right tail with some abalones being on the older side, but this doesn't represent a significant amount of them.
+
+# Exercise 4
+
+```{r}
+set.seed(40965642) #student number as seed for reproducibility
+n <- nrow(data) #gets the number of rows in the data set
+indices <- sample(1:n, size = n*0.5) #indices will store n/2 indices which will be a part of the training set
+
+train_data <- data[indices, ] #training data will be stored in train_data
+test_data <- data[-indices, ] #testing data will be stored in test_data
+
+dim(train_data) #Checks to make sure that we split the data sets up properly
+head(train_data)
+summary(train_data)
+dim(test_data) #Checks to make sure that we split the data sets up properly
+head(test_data)
+summary(test_data)
+```
+
+# Exercise 5
+
+```{r}
+lengthlm <- lm(Rings~Length, data = train_data) #fits a simple linear regression model with rings as the response variable and length as the predictor variable 
+summary(lengthlm) #displays the summary of the simple linear regression model
+e5R2 <- summary(lengthlm)$adj.r.squared #for use in exercise 22
+e5RSE <- summary(lengthlm)$sigma #for use in exercise 22
+testlengthlm <- predict(lengthlm, test_data) #code taken from lab 2
+e5MSE <- mean((test_data$Rings - testlengthlm)^2) #for use in exercise 22
+```
+
+Yes, we can tell that there is a significant relationship by looking at the Pr(>|t|) column in the Length Row. This p value is very small, indicating that there is a significant relationship between Rings and Length.
+
+# Exercise 6
+
+The coefficient of determination R^2 is equal to 0.3036. This means that 30.36% of the variance in Rings is explained by Length.
+
+# Exercise 7
+
+```{r}
+plot(train_data$Length, train_data$Rings, #scatter plot command
+     main = "Length vs Rings with fitted line",
+     xlab = "Length",
+     ylab = "Rings",
+     pch = 16,
+     col = "lightblue")
+abline(lengthlm, lwd = 2) #ab line adds the fitted line to the scatterplot
+```
+
+# Exercise 8
+
+I will restate the assumptions of the linear model here:
+
+1. Linearity: The relationship between the independent and dependent variables should be (approximately) linear.
+2. Independence of Errors: The errors (residuals) in the model should be independent of each other.
+3. Homoscedasticity: The variance of the residuals is constant across all levels of the predictors.
+
+Do these assumptions hold?
+
+1. Linearity: This assumption holds. The scatterplot holds a linear average rate of growth.
+2. Independence of Errors: This assumption holds. The residuals are independent of each other.
+3. Homoscedasticity: This assumption does __NOT__ hold. We can see a cone shape appear in the scatterplot, with the residuals getting larger as the values increase. This is an example of heteroscedasticity, which means this assumption is not satisfied.
+
+# Exercise 9
+
+```{r}
+plot(lengthlm)
+```
+
+To answer if the residuals are normally distributed, we look at the Q-Q Residual Plot. If the points on the plot follow the reference line, the residuals are normally distributed. However, both the left and right tails deviate from the reference line. This means that the residuals are not normally distributed.
+
+# Exercise 10
+
+```{r}
+lengthqm <- lm(Rings~Length + I(Length^2), data = train_data) #I function is used as outlined in lecture 5
+summary(lengthqm) 
+plot(lengthqm)
+e10R2 <- summary(lengthqm)$adj.r.squared #for use in exercise 22
+e10RSE <- summary(lengthqm)$sigma #for use in exercise 22
+testlengthqm <- predict(lengthqm, test_data) #code taken from lab 2
+e10MSE <- mean((test_data$Rings - testlengthqm)^2) #for use in exercise 22
+```
+
+The p-value is significant for the quadratic term Length^2. The adjusted R-Squared score is now 0.3103, up from 0.3032 when using the linear model. This means that the quadratic term is significant in helping predict the Rings variable. The Q-Q Residual Plot indicates that the residuals still are not normally distributed, as the reference line is not followed. The Scale-Location plot still indicates that the relationship is heteroscedastic. This is because the points are not normally scattered, we can see a pattern emerging.
+
+# Exercise 11
+
+```{r}
+lengthSexlm <- lm(Rings~Length + factor(Sex), data = train_data) # factor is used as outliend in slides
+summary(lengthSexlm)
+e11R2 <- summary(lengthSexlm)$adj.r.squared #for use in exercise 22
+e11RSE <- summary(lengthSexlm)$sigma #for use in exercise 22
+testlengthSexlm <- predict(lengthSexlm, test_data) #code taken from lab 2
+e11MSE <- mean((test_data$Rings - testlengthSexlm)^2) #for use in exercise 22
+```
+
+Adding sex into the model ends up with dummy variables being used. Since there are three categories (F, I, M), two dummy variables are created; SexI, and SexM. SexF is treated as the reference level. The p-values indicate that the result is significant when the Sex of the abalone is I, but insignificant when the Sex is M. The Adjusted R-Squared value for this model is 0.3291, which is an improvement over the 0.3032 when using a linear model with only length, and the 0.3103 when using the polynomial model using length and length^2.
+
+# Exercise 12
+
+__FEMALE:__ Rings = 4.0658 + 12.3703\*Length + _(-0.223)\*0_ + _(-1.5022)\*0_
+
+__MALE:__ Rings = 4.0658 + 12.3703\*Length + (-0.223)\*1 + _(-1.5022)\*0_
+
+__INFANT:__ Rings = 4.0658 + 12.3703\*Length + 1.5022\*1 + _(-0.223)\*0_
+
+# Exercise 13
+
+__A: Female__
+
+# Exercise 14
+
+__D: Not enough information to say__ 
+
+_P-Value was insignificant for SexM_
+
+# Exercise 15
+
+```{r}
+lengthSexWeightlm <- step(lengthSexlm, #utilized chatgpt to help with syntax here, as I could not find syntax for forward selection covered anywhere in the course
+                          scope = list(upper = lm(Rings~Length + factor(Sex) + Whole_Weight, data = train_data)),
+                          direction = "forward",
+                          steps = 1)
+summary(lengthSexWeightlm)
+e15R2 <- summary(lengthSexWeightlm)$adj.r.squared #for use in exercise 22
+e15RSE <- summary(lengthSexWeightlm)$sigma #for use in exercise 22
+testlengthSexWeightlm <- predict(lengthSexWeightlm, test_data) #code taken from lab 2
+e15MSE <- mean((test_data$Rings - testlengthSexWeightlm)^2) #for use in exercise 22
+```
+
+# Exercise 16
+
+
+```{r}
+cor(subset(train_data, select = -Sex)) #subset command removes the Sex variable, as it is categorical rather than continuous
+```
+
+The pair of predictor variables with the highest correlation are __Length__ and __Diameter__. The problem with this much correlation between variables lies with the principle of multicollinearity. Multicollinearity can lead to unstable coefficient estimates, inflated standard errors, and reduction in overall interpretability.
+
+# Exercise 17
+
+```{r}
+lengthWeightlm <- lm(Rings~Length + Whole_Weight, data = train_data)
+summary(lengthWeightlm)
+e17R2 <- summary(lengthWeightlm)$adj.r.squared #for use in exercise 22
+e17RSE <- summary(lengthWeightlm)$sigma #for use in exercise 22
+testlengthWeightlm <- predict(lengthWeightlm, test_data) #code taken from lab 2
+e17MSE <- mean((test_data$Rings - testlengthWeightlm)^2) #for use in exercise 22
+```
+
+__Multiple R-Squared Exercise 5: 0.3036__
+
+__Adjusted R-Squared Exercise 5: 0.3032__
+
+__Multiple R-Squared Exercise 17: 0.3095__
+
+__Adjusted R-Squared Exercise 17: 0.3089__
+
+The model in Exercise 5 explains 30.36% of the variance in Rings, while the model in Exercise 17 explains 30.95% of the variance in Rings. Exercise 17 has a larger difference between Multiple R-Squared and Adjusted R-Squared because it has an extra predictor, so it is penalized by the Adjusted R-Squared formula.
+
+# Exercise 18
+
+```{r}
+lengthWeightlmint <- lm(Rings~Length*Whole_Weight, data = train_data) #using * rather than + for interaction
+summary(lengthWeightlmint)
+e18R2 <- summary(lengthWeightlmint)$adj.r.squared #for use in exercise 22
+e18RSE <- summary(lengthWeightlmint)$sigma #for use in exercise 22
+testlengthWeightlmint <- predict(lengthWeightlmint, test_data) #code taken from lab 2
+e18MSE <- mean((test_data$Rings - testlengthWeightlmint)^2) #for use in exercise 22
+```
+
+The addition of the interaction term improves the model's performance. Both R-Squared values increase, indicating that the model does a better job of predicting the age of an abalone. We can also see that the p-value for the interaction term is miniscule, meaning that the term is significant.
+
+# Exercise 19
+
+```{r}
+allPredictorslm <- lm(Rings~Length+Diameter+Height+Whole_Weight+Shucked_Weight+Viscera_Weight+Shell_Weight+factor(Sex), data = train_data) #typed out every variable because we have to use factor() for the categorical variable Sex
+summary(allPredictorslm)
+e19R2 <- summary(allPredictorslm)$adj.r.squared #for use in exercise 22
+e19RSE <- summary(allPredictorslm)$sigma #for use in exercise 22
+testallPredictorslm <- predict(allPredictorslm, test_data) #code taken from lab 2
+e19MSE <- mean((test_data$Rings - testallPredictorslm)^2) #for use in exercise 22
+```
+
+According to the p-values, all predictors are statistically significant except for Length and SexM. For the categorical variable Sex, this means that only SexI is significant, because the reference level SexF and SexM do not have significant distinction.
+
+# Exercise 20
+
+Looking back to Exercise 16, we can look at correlations between certain variables to determine which ones we don't need. This can help reduce multicollinearity. Diameter and Length are highly correlated, and Length is not significant in the model made in Exercise 19. The first predictor that I would remove is __Length__. Whole Weight also has a high correlation with many other variables. Logically this makes sense, as it will likely be a congregation of the three partial weight predictors. Therefore, I don't think including the __Whole Weight__ predictor in the model is necessary.
+
+
+I believe that this will improve performance on the testing data. Including the variables will still provide a better result on the training data, but removing these redundant variables will help avoid overfitting for the testing data.
+
+# Exercise 21
+
+## Exercise 21a
+
+I split Exercise 21 into two parts to try to achieve two different results. If I create an extremely overfitted model then I can get a higher Adjusted R-Squared, but also a way higher Test MSE. For that reason, the model in Exercise 21a will be for the purpose of achieving the highest Adjusted R-Squared that I can, while the model in Exercise 21c will be for achieving the lowest Test MSE that I can. I will use Exercise 21b for exploration of what I want to include in the model.
+
+```{r}
+#myModelalm <- lm(Rings~Diameter*Height*Shucked_Weight*Viscera_Weight*Shell_Weight*factor(Sex)*Length*Whole_Weight*I(Shell_Weight^2)*I(Shell_Weight^3)*I(Diameter^2)*I(Diameter^3), data = train_data)
+#summary(myModelalm)
+#e21aR2 <- summary(myModelalm)$adj.r.squared #for use in exercise 22
+#e21aRSE <- summary(myModelalm)$sigma #for use in exercise 22
+#testmyModelalm <- predict(myModelalm, test_data) #code taken from lab 2
+#e21aMSE <- mean((test_data$Rings - testmyModelalm)^2) #for use in exercise 22
+```
+
+I commented this chunk of code out because it took my computer 25 mintues to run.
+
+
+Obviously, this model is ridiculous. Adding an obscene number of terms is overfitting, and not practical for actually predicting the age of an abalone. However, it gives a larger R^2 value, and the bonus mark is very attractive. I hope this isn't the highest value in the class because this model is horrible.
+
+The above chunk of code got 
+
+ + Adjusted R-Squared = __0.7139__
+ + RSE Training = __1.779697__
+ + MSETest = __7.414208x10^8__
+ 
+## Exercise 21b
+
+```{r}
+#I will create plots of Rings vs every variable to try to visualize relationships
+plot(train_data$Length, train_data$Rings,  #I will not formally name these plots, as these are exploratory, and not mandatory for the assignment
+     pch = 16)
+plot(train_data$Diameter, train_data$Rings,  #I will not formally name these plots, as these are exploratory, and not mandatory for the assignment
+     pch = 16)
+plot(train_data$Height, train_data$Rings,  #I will not formally name these plots, as these are exploratory, and not mandatory for the assignment
+     pch = 16)
+plot(train_data$Whole_Weight, train_data$Rings,  #I will not formally name these plots, as these are exploratory, and not mandatory for the assignment
+     pch = 16)
+plot(train_data$Shucked_Weight, train_data$Rings,  #I will not formally name these plots, as these are exploratory, and not mandatory for the assignment
+     pch = 16)
+plot(train_data$Viscera_Weight, train_data$Rings,  #I will not formally name these plots, as these are exploratory, and not mandatory for the assignment
+     pch = 16)
+plot(train_data$Shell_Weight, train_data$Rings,  #I will not formally name these plots, as these are exploratory, and not mandatory for the assignment
+     pch = 16)
+```
+
+Observations:
+
+ + The length and diameter plots look identical. Both of them are heteroscedastic, so they are hard to work with.
+ + Height looks like it can be fit by an exponential model. There is also one severe outlier that looks to be a data-collection error, I will try to remove that.
+ + All the weight variables seem to have a logarithmic relation to rings
+
+
+
+## Exercise 21c
+
+```{r}
+filtertrain_data <- filter(train_data, Height < 1, Rings < 21, Shell_Weight < 0.75)
+myModellm <- lm(Rings~Height+factor(Sex)+I(log(Whole_Weight))*I(log(Shucked_Weight))*I(log(Viscera_Weight))*I(log(Shell_Weight)), data = filtertrain_data)
+summary(myModellm)
+e21R2 <- summary(myModellm)$adj.r.squared #for use in exercise 22
+e21RSE <- summary(myModellm)$sigma #for use in exercise 22
+testmyModellm <- predict(myModellm, test_data) #code taken from lab 2
+e21MSE <- mean((test_data$Rings - testmyModellm)^2) #for use in exercise 22
+plot(myModellm) #diagnostics
+```
+
+This new model has the best Adjusted R-Squared, best Training RSE, and best Test MSE. The first change I made was I eliminated some of the outliers. There was a data entry error with one Height value being recorded as a full unit higher than all other Heights. I decided to not consider training data with Rings < 21 because those abalones followed no pattern with the other variables. I also eliminated Shell_Weight > 0.75 because there was no discernible pattern there earlier. After seeing the plots in Exercise 21b, I decided to use a few logarithmic relationships. Honestly, this involved some trial and error, I made one change at a time a couple of times just to minimize Test MSE. I wasn't able to get it any lower than 4.21.
+
+
+Unfortunately, the diagnostic plots show that this model still violates the assumptions of the linear model. I'm still not able to make the residuals normal, or the relationship homoscedastic. I'm not sure how to avoid this, I'd be happy to find out if there is a chance.
+
+# Exercise 22
+
+```{r}
+table <- data.frame(
+  Exercise = c("Exercise 5", "Exercise 10", "Exercise 11", "Exercise 15", "Exercise 17", "Exercise 18", "Exercise 19", "Exercise 21c"),
+  AdjustedRSquared = c(e5R2, e10R2, e11R2, e15R2, e17R2, e18R2, e19R2, e21R2),
+  RSETraining = c(e5RSE, e10RSE, e11RSE, e15RSE, e17RSE, e18RSE, e19RSE, e21RSE),
+  MSETest = c(e5MSE, e10MSE, e11MSE, e15MSE, e17MSE, e18MSE, e19MSE, e21MSE)
+)
+kable(table)
+```
+
+# Exercise 23
+
+The best choice would be the one made in Exercise 21, my personal model. It has the highest adjusted R-Squared, the lowest training RSE, and the lowest test MSE.
+
+# Exercise 24
+
+KNN Regression is a perfect model for illustrating bias vs. variance. Low values of k capture a lot of random noise, resulting in low bias and high variance. High values of k take more data into account, resulting in less accuracy but also more variance. High bias, low variance. Finding a middle ground for k results in the best results in terms of test MSE. The graph of test MSE also illustrates how values of k that are too high or low do not get the best results.
+
+# Exercise 25
+
+The high test MSE at k = 10 is an example of overfitting. A relatively low value of k such as 10 will end up taking a lot of random noise into account from the training set. Once the model with k = 10 is used on the testing set, it fluctuates too much to give an accurate result.
+
+# Exercise 26
+
+Based on the observed MSE values, it is clear that of the provided values, k = 100 is the best. The lower the observed MSE, the more accurate the model is. This result also aligns with the previous explanation in Exercise 24 of the bias/variance tradeoff.

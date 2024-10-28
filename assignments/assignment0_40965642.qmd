@@ -1,0 +1,66 @@
+---
+title: "Assignment 0"
+subtitle: "DATA 311 - Machine Learning"
+author: "Maxim Storozhuk (40965642)"
+toc: true
+format: html
+df-print: paged
+embed-resources: true
+editor: visual
+---
+
+# Introduction
+
+My name is **Maxim Storozhuk**, and I am a *3rd year* student who is majoring in **Computer Science**.
+
+I play on the volleyball team here at UBCO, and I am looking to learn a lot about Machine Learning this semester! The best ice cream flavours are:
+
++ Birthday Cake
+* Cookies & Cream
+- Cookie Dough
+
+
+![A picture of a cat should be depicted here](C:/DATA311/img/IMG_2665.jpg)
+Figure 1: My cat Timbit sitting on my homework.
+
+```{r}
+#| fig-height: 10 #will set figure height to 10
+#| fig-width: 8 #will set figure width to 8
+data <- read.csv("assignmentData/sales_data.csv") #data will be stored in the data variable
+
+library(dplyr) #now we can use commands from tidyverse
+
+str(data)
+head(data)
+
+data <- distinct(data) #removes duplicate rows
+
+summary(data) #gives a summary of data, including displaying how many missing values there are
+
+filtered_data <- filter(data, Store.Location == "New York") #filtered_data only contains sales made in New York
+
+sorted_filtered <- arrange(filtered_data, desc(Total.Sales)) #sorted_filtered is now sorted in descending order by total sales, so the highest total sale is at index 1
+print(paste("The highest total sale in New York was recorded on", sorted_filtered$Date[1])) #r indexes from 1 rather than 0
+
+freq_table <- table(data$Payment.Method) # will have amount of times each payment method is used correspond with the payment method
+most_used <- names(which.max(freq_table)) #most used payment method is stored in the most_used variable
+print(paste("The most used payment method is", most_used)) #prints most used payment method
+
+hist(data$Customer.Age, #creates a histogram of customer age
+     main = "Customer Age Histogram", #sets histogram title to customer age histogram
+     xlab = "Customer Age" #sets x-axis label to customer age
+     )
+```
+
+```{r}
+#| label: fig-scatterplot-quantity-price #labels the figure
+#| fig-cap: Relationship Between Quantity and Price
+
+plot(data$Quantity.Sold, data$Price, #creates a scatterplot of quantity vs price
+     xlab = "Quantity Sold", #labels the x-axis
+     ylab = "Price", #labels the y-axis
+     pch = 16, #I don't like the default dots
+     main = "Relationship Between Quantity and Price") #sets a title for the plot
+```
+
+We can see in Figure @fig-scatterplot-quantity-price that items that sell better tend to cost less. As quantity sold increases, price decreases.

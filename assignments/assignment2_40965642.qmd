@@ -1,0 +1,407 @@
+---
+title: "Assignment 2"
+subtitle: "DATA 311 - Machine Learning"
+author: "Maxim Storozhuk (40965642)"
+toc: true
+format: html
+df-print: paged
+embed-resources: true
+editor: visual
+---
+
+# Exercise 1
+
+This is both a __classification__ and __supervised__ problem.
+
+So, the answers are __A__ and __C__.
+
+# Exercise 2
+
+```{r}
+data <- read.csv("assignmentData/A2/churn.csv") #all data will now be stored in the "data" variable
+str(data) #check for correct data types.
+data$SeniorCitizen <- factor(data$SeniorCitizen) #SeniorCitizen is being treated as an integer rather than a categorical variable, so we will fix that
+str(data) #make sure the change worked. it did
+summary(data) #check for N/A
+data <- na.omit(data) #there are 11 N/A values in TotalCharges, so we want to remove them
+summary(data) #now, we can see all observations with N/As have been removed. we have gone from 7043 to 7032 observations
+```
+
+# Exercise 3
+
+```{r}
+library(ggplot2) #this will be used for the ggplot function
+counts <- table(data$Churn) #splits churn into yes and no
+barplot(counts,
+        xlab = "Churn",
+        ylab = "Frequency")
+```
+
+The classes are __imbalanced__. This means the model will tend to overpredict "No" since it contains a heavy majority of the observations, leading to poor performance on the minority class, "Yes". This will lead to worse performance in some metrics such as recall. Alternate techniques will be required if we want to improve model performance.
+
+# Exercise 4
+
+```{r}
+ggplot(data, aes(x = gender, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by Gender", x = "Gender", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = SeniorCitizen, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by SeniorCitizen", x = "SeniorCitizen", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = Partner, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by Partner", x = "Partner", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = Dependents, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by Dependents", x = "Dependents", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = PhoneService, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by PhoneService", x = "PhoneService", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = MultipleLines, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by MultipleLines", x = "MultipleLines", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = InternetService, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by InternetService", x = "InternetService", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = OnlineSecurity, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by OnlineSecurity", x = "OnlineSecurity", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = OnlineBackup, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by OnlineBackup", x = "OnlineBackup", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = DeviceProtection, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by DeviceProtection", x = "DeviceProtection", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = TechSupport, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by TechSupport", x = "TechSupport", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = StreamingTV, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by StreamingTV", x = "StreamingTV", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = StreamingMovies, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by StreamingMovies", x = "StreamingMovies", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = Contract, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by Contract", x = "Contract", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = PaperlessBilling, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by PaperlessBilling", x = "PaperlessBilling", y = "Proportion") +
+  theme_minimal()
+
+ggplot(data, aes(x = PaymentMethod, fill = Churn)) + #using code provided in assignment
+  geom_bar(position = "fill") +
+  labs(title = "Churn Rate by PaymentMethod", x = "PaymentMethod", y = "Proportion") +
+  theme_minimal()
+```
+
+Here is a list of categorical variables which seem to be correlated with churn:
+
+- SeniorCitizen
+- Partner
+- Dependents
+- InternetService
+- OnlineSecurity
+- OnlineBackup
+- DeviceProtection
+- TechSupport
+- StreamingTV
+- StreamingMovies
+- Contract
+- PaperlessBilling
+- PaymentMethod
+
+# Exercise 5
+
+```{r} 
+# Using code provided in assignment
+tenure_bins <- cut(data$tenure, 
+                         breaks = c(0, 9, 29, 55, Inf), 
+                         labels = c("0-9", "9-29", "29-55", "55+"),
+                         right = TRUE,   # Include the lower bound, exclude the upper
+                         include.lowest = TRUE)  # Include the lowest value
+
+ggplot(data, aes(x = tenure_bins, fill = Churn)) +
+    geom_bar(position = "fill") +
+    labs(title = "Churn Rate by Tenure Bins", x = "Tenure (Months)", y = "Proportion") +
+    theme_minimal()
+
+MonthlyCharges_bins <- cut(data$MonthlyCharges, 
+                         breaks = c(18, 35.5, 70.35, 89.85, Inf), 
+                         labels = c("18-35.5", "35.5-70.35", "70.35-89.85", "89.85+"),
+                         right = TRUE,   # Include the lower bound, exclude the upper
+                         include.lowest = TRUE)  # Include the lowest value
+
+ggplot(data, aes(x = MonthlyCharges_bins, fill = Churn)) +
+    geom_bar(position = "fill") +
+    labs(title = "Churn Rate by MonthlyCharges Bins", x = "Monthly Charges (Dollars)", y = "Proportion") +
+    theme_minimal()
+
+TotalCharges_bins <- cut(data$TotalCharges, 
+                         breaks = c(0, 401.4, 1397.5, 3794.7, Inf), 
+                         labels = c("0-401.4", "401.4-1397.5", "1397.5-3794.7", "3794.7+"),
+                         right = FALSE,   # Include the lower bound, exclude the upper
+                         include.lowest = TRUE)  # Include the lowest value
+
+ggplot(data, aes(x = TotalCharges_bins, fill = Churn)) +
+    geom_bar(position = "fill") +
+    labs(title = "Churn Rate by TotalCharges Bins", x = "Total Charges (Dollars)", y = "Proportion") +
+    theme_minimal()
+```
+
+I decided to split the data into the four quartiles indicated in the 5 number summary in Question 2. This will be better than simply splitting in evenly spaced bins, since those will have an uneven distribution of how much data is actually considered in each of the bins.
+
+__Tenure:__
+
+There is a relationship between Tenure and Churn. As tenure increases, churn decreases.
+
+__Monthly Charges:__
+
+Customers in the first quartile of Monthly Charges are less likely to churn. There doesn't seem to be a significant relationship involving the other 3 bins.
+
+__Total Charges:__
+
+There is a relationship between Total Charges and Churn. As the Total Charges increase, churn decreases.
+
+# Exercise 6
+
+```{r}
+set.seed(40965642) #student number as seed for reproducibility
+n <- nrow(data) #number of rows in data
+#get all the indices in the corresponding storage containers
+train_indices <- sample(1:n, size = round(n*0.7)) #0.7 because 70% of data should be in training set
+train_data <- data[train_indices, ]
+test_data <- data[-train_indices, ]
+#check to make sure split was done properly
+nrow(train_data)
+nrow(test_data)
+```
+
+I know the instructions mentioned using the validation set for tuning and model comparison, but there is nowhere in the assignment where it would actually be used. Therefore, I just used the full 30% for the testing set rather than discarding 10% of the data by making an unused validation set.
+
+# Exercise 7
+
+```{r}
+modelE7 <- glm(factor(Churn)~tenure+MonthlyCharges+TotalCharges, family = "binomial", data = train_data) #fit a generalized linear model using tenure, monthlycharges, and totalcharges.
+summary(modelE7)
+```
+
+# Exercise 8
+
+The model coefficients in logistic regression represent the change in log-odds for every unit increase of its corresponding variable. This means that:
+
+- __Tenure:__ For every month that the customer has spent with the company, the log odds that the customer will churn decrease by 0.0677.
+- __Monthly Charges:__ For every dollar that the customer is charged monthly, the log odds that the customer will churn increase by 0.03056.
+- __Total Charges:__ For every dollar the customer has been charged by the company total, the log odds that the customer will churn increase by 0.0001234. However, the p-value associated with this coefficient is not significant, meaning that the coefficient does not statistically differ from 0.
+
+# Exercise 9
+
+I will use all variables that appeared to affect Churn from exercises 4 and 5. The way I see it, there is no reason not to include a predictor if it looks like it has a relationship with churn. It just so happens that there are 15 variables that looked to have a relationship in the visualizations.
+
+```{r}
+modelE9 <- glm(factor(Churn)~tenure+MonthlyCharges+SeniorCitizen+factor(Partner)+factor(Dependents)+factor(InternetService)+factor(OnlineSecurity)+factor(OnlineBackup)+factor(DeviceProtection)+factor(TechSupport)+factor(StreamingTV)+factor(StreamingMovies)+factor(Contract)+factor(PaperlessBilling)+factor(PaymentMethod), family = "binomial", data = train_data)
+summary(modelE9)
+```
+
+# Exercise 10
+
+## Exercise 10a - Training a KNN Classifier
+
+```{r}
+#train knn classifier. using process outlined in lab 3
+library(class)
+set.seed(40965642)
+attach(train_data) #so i don't have to copy and paste train_data$ and test_data$ 15 times. i know it is not recommended, but i know what i am doing in this context
+train_x <- cbind(tenure, MonthlyCharges, SeniorCitizen, factor(Partner), factor(Dependents), factor(InternetService), factor(OnlineSecurity), factor(OnlineBackup), factor(DeviceProtection), factor(TechSupport), factor(StreamingTV), factor(StreamingMovies), factor(Contract), factor(PaperlessBilling), factor(PaymentMethod))
+train_y <- Churn
+detach(train_data) #important
+attach(test_data)
+test_x <- cbind(tenure, MonthlyCharges, SeniorCitizen, factor(Partner), factor(Dependents), factor(InternetService), factor(OnlineSecurity), factor(OnlineBackup), factor(DeviceProtection), factor(TechSupport), factor(StreamingTV), factor(StreamingMovies), factor(Contract), factor(PaperlessBilling), factor(PaymentMethod))
+detach(test_data)
+
+modelE10 <- knn(train = train_x, test = test_x, cl = train_y, k = 15)
+```
+
+Note: The value k = 15 was chosen without any thought. It ended up being a good choice though.
+
+## Exercise 10b - Find optimal value of k
+
+```{r}
+library(caret) #createFolds function
+#using process outlined in lab 4 here
+k_folds <- 10 #10-fold
+set.seed(40965642)
+#All data is used for kfold cross validation. the split into different sets is not relevant here
+folds <- createFolds(factor(data$Churn), k = k_folds, list = TRUE)
+k_values <- c(3, 5, 9, 15, 25, 41, 67, 109, 175, 285) #these are the 10 k-values that will be evaluated
+numKs <- length(k_values) #for indexing through k_values
+errorMatrix <- matrix(NA, nrow = k_folds, ncol = length(k_values)) #errors will be stored here
+for (j in 1:numKs) {
+  for (i in 1:k_folds) {
+    #lab 4 code is used here
+    train_indicesKNN <- unlist(folds[-i])
+    test_indicesKNN <- unlist(folds[i])
+    
+    train_dataKNN <- data[train_indicesKNN, ]
+    test_dataKNN <- data[test_indicesKNN, ]
+    
+    #use same process as used in 10a
+    
+    attach(train_dataKNN) #so i don't have to copy and paste train_data$ and test_data$ 15 times
+    train_xKNN <- cbind(tenure, MonthlyCharges, SeniorCitizen, factor(Partner), factor(Dependents), factor(InternetService), factor(OnlineSecurity), factor(OnlineBackup), factor(DeviceProtection), factor(TechSupport), factor(StreamingTV), factor(StreamingMovies), factor(Contract), factor(PaperlessBilling), factor(PaymentMethod))
+    train_yKNN <- Churn
+    detach(train_dataKNN)
+    attach(test_dataKNN)
+    test_xKNN <- cbind(tenure, MonthlyCharges, SeniorCitizen, factor(Partner), factor(Dependents), factor(InternetService), factor(OnlineSecurity), factor(OnlineBackup), factor(DeviceProtection), factor(TechSupport), factor(StreamingTV), factor(StreamingMovies), factor(Contract), factor(PaperlessBilling), factor(PaymentMethod))
+    detach(test_dataKNN)
+    #fit the model
+    knn_model <- knn(train = train_xKNN, test = test_xKNN, cl = train_yKNN, k = k_values[j])
+    
+    # Calculate the test error for this fold and store it
+    errorMatrix[i, j] <- mean(knn_model != test_dataKNN$Churn)
+  }
+}
+avgError <- colMeans(errorMatrix, na.rm = TRUE)
+optimalk <- k_values[which.min(avgError)]
+optimalk
+```
+
+The 10-fold cross validation indicates that the optimal value of k from the tested values is __25__.
+
+# Exercise 11
+
+```{r}
+library(class)
+set.seed(40965642)
+#we already have train_x, test_x and train_y from the previous code chunk
+modelE11 <- knn(train = train_x, test = test_x, cl = train_y, k = 25)
+```
+
+# Exercise 12
+
+The only non-deterministic component of this algorithm arises during tie-breaking. A simple example is that if k = 2 and there is 1 red and 1 blue neighbour both a distance of 1 away, then there will be a tie. This tie needs to be randomly broken. If no seed is set, then this result will be different every time, so we want to set a seed for reproducibility in case if this tie arises. For this problem specifically, it is unlikely that a tie will arise when using k = 25 and 15 predictor variables, but we need to be prepared just in case, and it is good practice.
+
+# Exercise 13
+
+```{r}
+library(MASS)
+modelE13 <- lda(Churn ~ tenure+TotalCharges, data = train_data) #train an LDA model
+```
+
+# Exercise 14
+
+```{r}
+modelE14 <- qda(Churn ~ tenure+TotalCharges, data = train_data) #train a QDA model
+```
+
+# Exercise 15
+
+```{r}
+predProbE7 <- predict(modelE7, newdata = test_data, type = "response")
+predE7 <- factor(predProbE7>0.5, levels=c(FALSE,TRUE), labels=c("No", "Yes"))
+tabE7 <- table(test_data$Churn, predE7)
+tabE7
+
+predProbE9 <- predict(modelE9, newdata = test_data, type = "response")
+predE9 <- factor(predProbE9>0.5, levels=c(FALSE,TRUE), labels=c("No", "Yes"))
+tabE9 <- table(test_data$Churn, predE9)
+tabE9
+
+tabE10 <- table(test_data$Churn, modelE10)
+tabE10
+tabE11 <- table(test_data$Churn, modelE11)
+tabE11
+
+predE13 <- predict(modelE13, newdata = test_data)
+tabE13 <- table(test_data$Churn, predE13$class)
+tabE13
+
+predE14 <- predict(modelE14, newdata = test_data)
+tabE14 <- table(test_data$Churn, predE14$class)
+tabE14
+```
+
+# Exercise 16
+
+```{r}
+library(knitr)
+#recall = a/(a+b), where a = true positive, and b = false negative
+#in these confusion matrices, a will be in [2,2], while b will be in [2,1]
+
+rE7 <- tabE7[2,2] / (tabE7[2,2] + tabE7[2,1])
+rE9 <- tabE9[2,2] / (tabE9[2,2] + tabE9[2,1])
+rE10 <- tabE10[2,2] / (tabE10[2,2] + tabE10[2,1])
+rE11 <- tabE11[2,2] / (tabE11[2,2] + tabE11[2,1])
+rE13 <- tabE13[2,2] / (tabE13[2,2] + tabE13[2,1])
+rE14 <- tabE14[2,2] / (tabE14[2,2] + tabE14[2,1])
+
+e16 <- data.frame(
+  Model = c("Basic Logistic Regression. Exercise 7", "My Logistic Regression. Exercise 9", "KNN Model, k = 15. Exercise 10", "KNN Model, k = 25. Exercise 11", "LDA. Exercise 13", "QDA. Exercise 14"),
+  Recall = c(rE7, rE9, rE10, rE11, rE13, rE14)
+)
+kable(e16)
+```
+
+Interestingly, k = 15 has a higher recall than k = 25. And, if you look at the confusion matrices in Exercise 15, it has a higher accuracy as well. This can happen because the k-fold cross validation uses "folds" as the the testing set, and all other data in the training set. Just training the KNN model normally uses a specific training set and a specific testing set. k = 25 generally performs better, but the way that the training and testing split worked out with my student number seed, k = 15 performed better under those specific circumstances.
+
+QDA performed very well here. If you look at the confusion matrices, you can see that it had a lot of false positives in addition to its true positives. It performed very well on recall which is the metric we care about, but it would struggle in other metrics if we were to evaluate them.
+
+# Exercise 17
+
+```{r}
+set.seed(40965642)
+B <- 1000 #number of bootstrap samples to be taken
+recalls <- numeric(1000) #all calculates recalls will be stored here
+ntrain <- nrow(train_data) #size of training set
+
+for(i in 1:B){
+  boot_indices <- sample(1:ntrain, ntrain, replace = TRUE)  #sample the size of the training set indices with replacement
+  boot_data <- train_data[boot_indices, ]
+  
+  qdaMod <- qda(Churn~tenure+TotalCharges, data = boot_data) #train QDA model
+  predqda <- predict(qdaMod, newdata = test_data) #predict
+  tabqda <- table(test_data$Churn, predqda$class) #create confusion matrix
+  recalls[i] <- tabqda[2,2] / (tabqda[2,2]+tabqda[2,1]) #calculate recall and store in recall container
+}
+meanRec <- mean(recalls) #mean recall from all 1000 samples
+stdevRec <- sd(recalls) #standard deviation of the recall from the 1000 samples
+meanRec
+stdevRec
+
+lowCI <- meanRec - stdevRec*1.96 #calculate 95% confidence interval lower bound
+highCI <- meanRec + stdevRec*1.96 #calculate 95% confidence interval upper bound
+lowCI
+highCI
+```
+
+The standard deviation for recall is __0.009838352__.
+
+The 95% confidence interval for recall is __0.6964867-0.7350531__. This means that we are 95% sure that the mean for recall using the QDA model lies within the interval. This aligns with the result in Exercise 14/16. The recall of 0.7221239 lies within this confidence interval.
