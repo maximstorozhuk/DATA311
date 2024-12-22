@@ -11,9 +11,9 @@ editor: visual
 
 # Exercise 1
 
-This is both a __classification__ and __supervised__ problem.
+This is both a **classification** and **supervised** problem.
 
-So, the answers are __A__ and __C__.
+So, the answers are **A** and **C**.
 
 # Exercise 2
 
@@ -37,7 +37,7 @@ barplot(counts,
         ylab = "Frequency")
 ```
 
-The classes are __imbalanced__. This means the model will tend to overpredict "No" since it contains a heavy majority of the observations, leading to poor performance on the minority class, "Yes". This will lead to worse performance in some metrics such as recall. Alternate techniques will be required if we want to improve model performance.
+The classes are **imbalanced**. This means the model will tend to overpredict "No" since it contains a heavy majority of the observations, leading to poor performance on the minority class, "Yes". This will lead to worse performance in some metrics such as recall. Alternate techniques will be required if we want to improve model performance.
 
 # Exercise 4
 
@@ -125,23 +125,23 @@ ggplot(data, aes(x = PaymentMethod, fill = Churn)) + #using code provided in ass
 
 Here is a list of categorical variables which seem to be correlated with churn:
 
-- SeniorCitizen
-- Partner
-- Dependents
-- InternetService
-- OnlineSecurity
-- OnlineBackup
-- DeviceProtection
-- TechSupport
-- StreamingTV
-- StreamingMovies
-- Contract
-- PaperlessBilling
-- PaymentMethod
+-   SeniorCitizen
+-   Partner
+-   Dependents
+-   InternetService
+-   OnlineSecurity
+-   OnlineBackup
+-   DeviceProtection
+-   TechSupport
+-   StreamingTV
+-   StreamingMovies
+-   Contract
+-   PaperlessBilling
+-   PaymentMethod
 
 # Exercise 5
 
-```{r} 
+```{r}
 # Using code provided in assignment
 tenure_bins <- cut(data$tenure, 
                          breaks = c(0, 9, 29, 55, Inf), 
@@ -179,15 +179,15 @@ ggplot(data, aes(x = TotalCharges_bins, fill = Churn)) +
 
 I decided to split the data into the four quartiles indicated in the 5 number summary in Question 2. This will be better than simply splitting in evenly spaced bins, since those will have an uneven distribution of how much data is actually considered in each of the bins.
 
-__Tenure:__
+**Tenure:**
 
 There is a relationship between Tenure and Churn. As tenure increases, churn decreases.
 
-__Monthly Charges:__
+**Monthly Charges:**
 
 Customers in the first quartile of Monthly Charges are less likely to churn. There doesn't seem to be a significant relationship involving the other 3 bins.
 
-__Total Charges:__
+**Total Charges:**
 
 There is a relationship between Total Charges and Churn. As the Total Charges increase, churn decreases.
 
@@ -218,9 +218,9 @@ summary(modelE7)
 
 The model coefficients in logistic regression represent the change in log-odds for every unit increase of its corresponding variable. This means that:
 
-- __Tenure:__ For every month that the customer has spent with the company, the log odds that the customer will churn decrease by 0.0677.
-- __Monthly Charges:__ For every dollar that the customer is charged monthly, the log odds that the customer will churn increase by 0.03056.
-- __Total Charges:__ For every dollar the customer has been charged by the company total, the log odds that the customer will churn increase by 0.0001234. However, the p-value associated with this coefficient is not significant, meaning that the coefficient does not statistically differ from 0.
+-   **Tenure:** For every month that the customer has spent with the company, the log odds that the customer will churn decrease by 0.0677.
+-   **Monthly Charges:** For every dollar that the customer is charged monthly, the log odds that the customer will churn increase by 0.03056.
+-   **Total Charges:** For every dollar the customer has been charged by the company total, the log odds that the customer will churn increase by 0.0001234. However, the p-value associated with this coefficient is not significant, meaning that the coefficient does not statistically differ from 0.
 
 # Exercise 9
 
@@ -294,7 +294,7 @@ optimalk <- k_values[which.min(avgError)]
 optimalk
 ```
 
-The 10-fold cross validation indicates that the optimal value of k from the tested values is __25__.
+The 10-fold cross validation indicates that the optimal value of k from the tested values is **25**.
 
 # Exercise 11
 
@@ -402,6 +402,6 @@ lowCI
 highCI
 ```
 
-The standard deviation for recall is __0.009838352__.
+The standard deviation for recall is **0.009838352**.
 
-The 95% confidence interval for recall is __0.6964867-0.7350531__. This means that we are 95% sure that the mean for recall using the QDA model lies within the interval. This aligns with the result in Exercise 14/16. The recall of 0.7221239 lies within this confidence interval.
+The 95% confidence interval for recall is **0.6964867-0.7350531**. This means that we are 95% sure that the mean for recall using the QDA model lies within the interval. This aligns with the result in Exercise 14/16. The recall of 0.7221239 lies within this confidence interval.

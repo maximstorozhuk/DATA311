@@ -1,0 +1,266 @@
+---
+title: "Assignment 3"
+subtitle: "DATA 311 - Machine Learning"
+author: "Maxim Storozhuk (40965642)"
+toc: true
+format: html
+df-print: paged
+embed-resources: true
+editor: visual
+---
+
+# Exercise 1
+
+```{r}
+library(glmnet)    # For Ridge and Lasso regression
+library(caret)     # For data splitting and evaluation
+library(tidyverse) # For data manipulation and visualization
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(knitr)
+
+data <- read.csv("assignmentData/A3/datasalaries.csv")
+str(data)
+#Data seems to be properly formatted. Check for N/As
+summary(data)
+```
+
+All of the data is properly formatted, and there are no N/A values. There are 7517 observations.
+
+# Exercise 2
+
+```{r}
+
+set.seed(40965642) #student number as seed for reproducibility
+n <- nrow(data) #number of rows in data
+#get all the indices in the corresponding storage containers
+train_indices <- sample(1:n, size = round(n*0.5)) #0.5 because 50% of data should be in training set
+train_data <- data[train_indices, ]
+test_data <- data[-train_indices, ]
+#check to make sure split was done properly
+nrow(train_data)
+nrow(test_data)
+```
+
+# Exercise 3
+
+```{r}
+#| fig-height: 9 #will set figure height to 10
+#| fig-width: 8 #will set figure width to 8
+modelE3 <- rpart(salary ~ ., data = train_data, method = "anova")
+rpart.plot(modelE3)
+```
+
+__Decision Node 1: yearsofexperience < 9__
+
+Employees with less than 9 years of experience are expected to have a lower salary, so they are sent to the left side of the tree. 
+
+Employees with 9 or more years of experience are expected to have a higher salary, so they are sent to the right side of the tree.
+
+
+__Decision Node 2: company = Amazon, Microsoft, Oracle__ (first node on left side)
+
+Employees who work at Amazon, Microsoft, or Oracle are expected to have a lower salary than those who work at a different company, so they are sent to the left side of this subset of the tree.
+
+Employees who work at a company other than Amazon, Microsoft, or Oracle are expected to have a higher salary than those who do, so they are sent to the right side of this subset of the tree.
+
+
+__Decision Node 3: company = Amazon, Microsoft, Oracle__ (first node on right side)
+
+Employees who work at Amazon, Microsoft, or Oracle are expected to have a lower salary than those who work at a different company, so they are sent to the left side of this subset of the tree.
+
+Employees who work at a company other than Amazon, Microsoft, or Oracle are expected to have a higher salary than those who do, so they are sent to the right side of this subset of the tree.
+
+# Exercise 4
+
+```{r}
+predictModelE3 <- predict(modelE3, newdata = test_data)
+mseE3 <- mean((predictModelE3 - test_data$salary)^2)
+rmseE3 <- sqrt(mseE3)
+rmseE3
+```
+
+The Root Mean Squared Error of 149356 shows us that our average prediction is about $149536 off.
+
+# Exercise 5
+
+```{r, cache = TRUE}
+set.seed(40965642)
+modelE5 <- randomForest(salary ~ ., data = train_data, ntree = 500, importance = TRUE)
+```
+
+# Exercise 6
+
+```{r}
+predictModelE5 <- predict(modelE5, newdata = test_data)
+mseE5 <- mean((predictModelE5 - test_data$salary)^2)
+rmseE5 <- sqrt(mseE5)
+rmseE5
+oobmseE5 <- modelE5$mse[length(modelE5$mse)]
+oobrmseE5 <- sqrt(oobmseE5)
+oobrmseE5
+```
+
+The OOB error is lower than the test error, which is completely normal since the test set is a completely unseen data set.
+
+# Exercise 7
+
+```{r}
+varImpPlot(modelE5)
+importance(modelE5)
+```
+
+According to Slide 40 of Lecture 12, a higher increase of node purity indicates that the variable is more important. So, since the highest IncNodePurity belongs to the variable "yearsofexperience", we can determine that that is the most important variable.
+
+# Exercise 8
+
+```{r, cache=TRUE}
+p <- ncol(train_data) - 1 # -1 because salary is not a predictor variable but it is one of the columns in train_data
+#40965642 * 2 = 81931284
+set.seed(81931284)
+modelE8 <- randomForest(salary~., data = train_data, ntree = 500, mtry = p, importance = TRUE)
+```
+
+# Exercise 9
+
+```{r}
+predictModelE8 <- predict(modelE8, newdata = test_data)
+mseE8 <- mean((predictModelE8 - test_data$salary)^2)
+rmseE8 <- sqrt(mseE8)
+rmseE8
+oobmseE8 <- modelE8$mse[length(modelE8$mse)]
+oobrmseE8 <- sqrt(oobmseE8)
+oobrmseE8
+```
+
+The OOB error is lower than the test error, which is completely normal since the test set is a completely unseen data set.
+
+# Exercise 10
+
+```{r}
+varImpPlot(modelE8)
+importance(modelE8)
+```
+
+According to Slide 40 of Lecture 12, a higher increase of node purity indicates that the variable is more important. So, since the highest IncNodePurity belongs to the variable “yearsofexperience”, we can determine that that is the most important variable.
+
+# Exercise 11
+
+```{r}
+mm <- model.matrix(~ . - salary, data = train_data)[, -1]
+```
+
+We don't want to include salary in the matrix, since it is our response variable.
+
+# Exercise 12
+
+```{r}
+modelE12 <- glmnet(mm, train_data$salary, alpha = 0)
+modelE12
+summary(modelE12)
+```
+
+# Exercise 13
+
+```{r}
+set.seed(40965642)
+cvE12 <- cv.glmnet(mm, train_data$salary, alpha = 0)
+minLambda <- cvE12$lambda.min
+minLambda
+```
+
+The lowest lambda is the one that has the lowest estimate of error. We will take more lambda values to try to find the true best lambda.
+
+Using default lambda values, the best lambda is 6385.121
+
+## Exercise 12.2
+
+ln(63850000) = 17.97, so we will measure up to e^18. We will go all the way down to e^1 on this iteration to try to find the optimal lambda value.
+
+```{r}
+grid <- exp(seq(18, 1, length = 100))
+modelE12b <- glmnet(mm, train_data$salary, alpha = 0, lambda = grid)
+modelE12b
+```
+
+## Exercise 13.2
+
+```{r}
+set.seed(40965642)
+cvE12b <- cv.glmnet(mm, train_data$salary, alpha = 0, lambda = grid)
+minLambdab <- cvE12b$lambda.min
+minLambdab
+```
+
+I've just realized that Exercise 12 states that you should use the default lambda values. I will keep this in anyways to show that the best lambda value will be somewhere around 1854.
+
+# Exercise 14
+
+```{r}
+mmTest <- model.matrix(~ . - salary, data = test_data)[, -1]
+predictModelE14 <- predict(modelE12, newx = mmTest, s = minLambda)
+mseE14 <- mean((predictModelE14 - test_data$salary)^2)
+rmseE14 <- sqrt(mseE14)
+rmseE14
+```
+
+# Exercise 15
+
+```{r}
+lambda1se <- cvE12$lambda.1se
+predictModelE15 <- predict(modelE12, newx = mmTest, s = lambda1se)
+mseE15 <- mean((predictModelE15 - test_data$salary)^2)
+rmseE15 <- sqrt(mseE15)
+rmseE15
+```
+
+# Exercise 16
+
+```{r}
+modelE16 <- glmnet(mm, train_data$salary, alpha = 1)
+```
+
+# Exercise 17
+
+```{r}
+set.seed(40965642)
+cvE16 <- cv.glmnet(mm, train_data$salary, alpha = 1)
+minLambda16 <- cvE16$lambda.min
+minLambda16
+```
+
+# Exercise 18
+
+```{r}
+mmTest <- model.matrix(~ . - salary, data = test_data)[, -1]
+predictModelE18 <- predict(modelE16, newx = mmTest, s = minLambda)
+mseE18 <- mean((predictModelE18 - test_data$salary)^2)
+rmseE18 <- sqrt(mseE18)
+rmseE18
+```
+
+# Exercise 19
+
+```{r}
+lambda1se16 <- cvE16$lambda.1se
+predictModelE19 <- predict(modelE16, newx = mmTest, s = lambda1se)
+mseE19 <- mean((predictModelE19 - test_data$salary)^2)
+rmseE19 <- sqrt(mseE19)
+rmseE19
+```
+
+# Exercise 20
+
+```{r}
+oobrmseE5 <- round(oobrmseE5)
+oobrmseE8 <- round(oobrmseE8)
+e20 <- data.frame(
+  Model = c("Decision Tree. Exercise 3", "Random Forest. Exercise 5", "Bagging. Exercise 8", "Ridge Regression, Best Lambda. Exercise 14", "Ridge Regression, 1 standard Error. Exercise 15", "LASSO, Best Lambda. Exercise 18", "LASSO, 1 standard error. Exercise 19"),
+  TestRMSE = c(rmseE3, rmseE5, rmseE8, rmseE14, rmseE15, rmseE18, rmseE19),
+  OOBRMSE = c("N/A", oobrmseE5, oobrmseE8, "N/A", "N/A", "N/A", "N/A")
+)
+kable(e20)
+```
+
+The random forest performed the best on this data set. It had the lowest test RMSE, which showed that it was the most effective at predicting salary for unseen data points.

@@ -1,0 +1,265 @@
+---
+title: "Assignment 4"
+subtitle: "DATA 311 - Machine Learning"
+author: "Maxim Storozhuk (40965642)"
+toc: true
+format: html
+df-print: paged
+embed-resources: true
+editor: visual
+---
+
+# Exercise 1
+
+Clustering and classification have some key differences.
+
+Classification is __supervised__, where data points are assigned to pre-determined groups. The model learns patterns in the data to predict the class labels of new, unseen data.
+
+Clustering is __unsupervised__, where data points are divided into groups. However, algorithm does not get any information about the group structure of the data. It can not classify anything correctly or incorrectly, but it looks for similarities in the data to determine which other data points a singular data point is most similar to.
+
+Classification Example: Determining if an email is spam or not spam. There are two distinct categories (spam or not spam) for the classification algorithm to choose from.
+
+Clustering Example: Identifying regions with similar climates. These regions do not have labels, but they have various types of data that could be used to find similarities between regions' climates.
+
+# Exercise 2
+
+```{r}
+library(dplyr)
+library(caret)
+library(palmerpenguins)
+data(package ='palmerpenguins')
+data <- penguins
+head(data)
+str(data)
+summary(data)
+data <- na.omit(data)
+summary(data)
+```
+
+# Exercise 3
+
+```{r}
+selected_data <- data %>% select(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g)
+distance_matrix <- dist(scale(selected_data), method="euclidean") #scaling the data is good practice
+class(distance_matrix)
+```
+
+# Exercise 4
+
+```{r}
+#assuming to leave out centroid linkage
+singleLinkage <- hclust(distance_matrix, method = "single")
+averageLinkage <- hclust(distance_matrix, method = "average")
+completeLinkage <- hclust(distance_matrix, method = "complete")
+plot(singleLinkage, main = "Single Linkage")
+plot(averageLinkage, main = "Average Linkage")
+plot(completeLinkage, main = "Complete Linkage")
+```
+
+# Exercise 5
+
+Generally, complete linkage is considered the best method. Let's analyze the dendograms to see if this holds for this dataset.
+
+The single linkage dendogram appears to be a mess, which is as expected. It has clearly fallen victim to chaining. It provides a significantly different solution in comparison to average linkage and complete linkage.
+
+The average linkage dendogram doesn't look too bad, and it is fairly similar to the complete linkage one. The average linkage dendogram gets cluttered a bit higher up than the complete linkage one. For that reason, as well as complete linkage typically being considered the best method, I believe __complete linkage__ is the best method for this problem.
+
+# Exercise 6
+
+Looking ahead at Exercise 7, we need to calculate the misclassification rate for, and compare all of species, island, year, and sex. Species, island, and year all have 3 possible values, which would mean we would need to consider 3 clusters. However, sex only has 2 possible values, which would mean that we would compare 2 possible values. For that reason, we will need to consider both the cases of 2 clusters, and 3 clusters.
+
+```{r}
+cluster3 <- cutree(completeLinkage, 3)
+cluster2 <- cutree(completeLinkage, 2)
+freqTable3 <- table(cluster3)
+print(freqTable3)
+freqTable2 <- table(cluster2)
+print(freqTable2)
+```
+
+# Exercise 7
+
+```{r}
+#display tables for all variables
+table(cluster3, data$species) 
+table(cluster3, data$island)
+table(cluster3, as.factor(data$year))
+table(cluster2, data$sex)
+
+#adjust labels for clustering algorithm, to best match classification
+speciesLabels <- c("Adelie", "Chinstrap", "Gentoo")
+islandLabels <- c("Torgersen", "Dream", "Biscoe")
+yearLabels <- c("2008", "2007", "2009") #no real good matchup for this one, but we also already know this isn't what is being clustered
+sexLabels <- c("female", "male") #again, no good matchup, but we can tell this isn't what is being clustered
+
+c3Species <- factor(speciesLabels[cluster3], levels = levels(data$species))
+c3Island <- factor(islandLabels[cluster3], levels = levels(data$island))
+c3Year <- factor(yearLabels[cluster3], levels = levels(as.factor(data$year)))
+c2Sex <- factor(sexLabels[cluster2], levels = levels(data$sex))
+
+CMSpecies <- confusionMatrix(c3Species, data$species)
+CMIsland <- confusionMatrix(c3Island, data$island)
+CMYear <- confusionMatrix(c3Year, as.factor(data$year))
+CMSex <- confusionMatrix(c2Sex, data$sex)
+
+accSpecies <- CMSpecies$overall['Accuracy']
+accIsland <- CMIsland$overall['Accuracy']
+accYear <- CMYear$overall['Accuracy']
+accSex <- CMSex$overall['Accuracy']
+
+MCRSpecies <- 1 - as.numeric(accSpecies)
+MCRIsland <- 1 - as.numeric(accIsland)
+MCRYear <- 1 - as.numeric(accYear)
+MCRSex <- 1 - as.numeric(accSex)
+
+MCRSpecies
+MCRIsland
+MCRYear
+MCRSex
+```
+
+__Species__ has the lowest misclassification rate by far, so we can conclude that the clustering algorithm is clustering by species.
+
+# Exercise 8
+
+```{r}
+#the Kmeans function in R only accepts data with numeric arguments, so we will make a separate data frame which only has numeric arguments within in
+numeric_data <- data
+numeric_data$sex <- as.numeric(data$sex)
+numeric_data$species <- as.numeric(data$species)
+numeric_data$island <- as.numeric(data$island)
+numeric_data$year <- as.numeric(as.factor(data$year))
+numeric_data$flipper_length_mm <- as.numeric(data$flipper_length_mm)
+numeric_data$body_mass_g <- as.numeric(data$body_mass_g)
+
+set.seed(40965642/2)
+kmeans2 <- kmeans(scale(numeric_data), centers = 2)
+kmeans2Results <- kmeans2$cluster
+kmeans2Results
+```
+
+Observations 1-146 are put in group 2, observations 147-265 are put in group 1, and observations 266-333 are put in group 2.
+
+# Exercise 9
+
+I would expect the K-means algorithm to cluster by __sex__, as it is the only categorical variable with two possible classifications.
+
+```{r}
+factorSex <- as.factor(numeric_data$sex)
+factorK2Results <- as.factor(kmeans2Results)
+CMSexKMeans <- confusionMatrix(factorK2Results, factorSex)
+CMSexKMeans
+```
+
+It is clear that the K-means algorithm with 2 centers did not align with sex. These results look identical to the results found by the complete linkage hierarchical clustering algorithm cut at 2 categories, so a valid assumption would be that the k-means algorithm also tried to group by species.
+
+# Exercise 10
+
+```{r}
+set.seed(40965642/2)
+kmeans3 <- kmeans(scale(numeric_data), centers = 3)
+kmeans3Results <- kmeans3$cluster
+
+table(kmeans3Results, numeric_data$species)
+table(kmeans3Results, numeric_data$island)
+
+newMapping <- c(3, 2, 1)
+kmeans3Mapped <- newMapping[kmeans3Results]
+
+factorSpecies <- as.factor(numeric_data$species)
+factorK3Species <- as.factor(kmeans3Mapped)
+
+factorIsland <- as.factor(numeric_data$island)
+factorK3Island <- as.factor(kmeans3Results)
+
+CMSpeciesK <- confusionMatrix(factorK3Species, factorSpecies)
+CMIslandK <- confusionMatrix(factorK3Island, factorIsland)
+
+accSpeciesK <- CMSpeciesK$overall['Accuracy']
+accIslandK <- CMIslandK$overall['Accuracy']
+
+MCRSpeciesK <- 1 - as.numeric(accSpeciesK)
+MCRIslandK <- 1 - as.numeric(accIslandK)
+MCRSpeciesK
+MCRIslandK
+```
+
+The corresponding misclassification rate is much lower for species than it is for island, so we can conclude that the resulting clusters from the algorithm match up with __species__.
+
+# Exercise 11
+
+```{r}
+library(gclus)
+data(wine, package = "gclus")
+dataW <- wine
+head(dataW)
+str(dataW)
+summary(dataW)
+```
+
+# Exercise 12
+
+```{r}
+pca <- prcomp(dataW[, -1], scale. = TRUE) #class is at index 1, exclude class
+summary(pca)
+```
+
+# Exercise 13
+
+```{r}
+biplot(pca, scale = 0, cex = c(0.5, 0.8))
+```
+
+__Relationship Between Variables:__ Variables with arrows pointing in similar directions are _positively correlated_. An example of this is the group of arrows corresponding with the variables __flavanoids__, __phenols__, and __proanthocyanins__.
+
+Variables with arrows pointing in opposite directions are _negatively correlated_. An example of this is the variable __hue__ and the variable __malic__, who have arrows pointing in opposite directions.
+
+The longer the arrows are for variables, the more heavily weighted they are in the principal components. This means that a variable like __intensity__ is more heavily weighted than a variable like __ash__.
+
+__Variance Explained by Principal Components:__ The first principal component (PC1) corresponds with the highest portion of variance explained, and that lies along the x-axis. This means that variables that lie among the x-axis like __flavanoids__, __phenols__, __proanthocyanins__, __alcalinity__, and __nonflavanoid__ weigh most heavily for the first principal component.
+
+The second principal component (PC2) represents the second highest portion of variance explained, less than what is explained by PC1. It lies along the y-axis. This means that variables that lie among the y-axis like __intensity__, __ash__, and __alcohol__ weigh most heavily for the second principal component. However, these variables explain less total variance than the variables used in the first principal component.
+
+__Observed Clustering Patterns:__ Clusters of observations indicate that they are similar, and may belong to the same group. On this biplot, we can observe distinct groups on the left, top, and right of the plot.
+
+# Exercise 14
+
+```{r}
+plot(pca, type="lines", npcs = 13)
+#It is not entirely clear what "How much variance do this principal components retrain from the original data set" means.
+```
+
+The scree plot appears to suggest that we keep either 3 or 4 principal components, it isn't entirely clear. That is where the elbow point where the scree plot levels off is. Looking back to the output in Exercise 12, 3 principal components explain 66.53% of the variance in the data set, while 4 principal components explain 73.6% of the variance in the data set.
+
+# Exercise 15
+
+Looking at the output of Exercise 12, we should retain 3 principal components according to the Kaiser criterion. While the Kaiser criterion keeps principal components with eigenvalues greater than 1, we can still use the eigenvalue^2 (Standard Deviation) since anything greater than one squared is greater than one, and anything less than one squared is less than one.
+
+# Exercise 16
+
+```{r}
+library(MASS)
+pca_scores <- pca$x
+selectedpca <- pca_scores[, 1:5]
+lda_data <- data.frame(selectedpca, Class = dataW$Class)
+
+ldaModel <- lda(Class ~ ., data = lda_data)
+predLDA <- predict(ldaModel)
+factoredLDA <- as.factor(predLDA$class)
+factoredClass <- as.factor(dataW$Class)
+CMLDA <- confusionMatrix(factoredClass, factoredLDA)
+accLDA <- CMLDA$overall['Accuracy']
+MCRLDA <- 1 - as.numeric(accLDA)
+MCRLDA
+```
+
+The cross-validated misclassification rate of this model is equal to __0.0225__, or about __2.25%__.
+
+
+
+
+
+
+
+
+
